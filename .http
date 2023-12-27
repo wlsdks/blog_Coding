@@ -1,3 +1,2 @@
 ### GET 요청 예시
 GET http://localhost:8080/courses/print
-

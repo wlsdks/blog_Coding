@@ -1,7 +1,7 @@
 package com.study.blog.service;
 
-import com.study.blog.domain.Course;
-import com.study.blog.domain.Student;
+import com.study.blog.entity.Course;
+import com.study.blog.entity.Student;
 import com.study.blog.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,9 @@ public class CourseService {
     @Transactional(readOnly = true)
     public void printAllCoursesWithStudents() {
 
-        List<Course> courses = courseRepository.findAll();
+        List<Course> courses = courseRepository.findAll(); // N + 1이 발생하는 로직
+//        List<Course> courses = courseRepository.findAllWithStudents(); // 엔티티 그래프 로직
+//        List<Course> courses = courseRepository.findAllWithStudentsFetchJoin(); // Join Fetch 로직
 
         for (Course c : courses) {
             System.out.println("Course " + c.getName() + " has students: ");

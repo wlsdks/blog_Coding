@@ -1,19 +1,14 @@
-package com.study.blog.domain;
+package com.study.blog.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.util.HashSet;
 import java.util.Set;
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @Getter
 @Entity
+@NamedEntityGraph(name = "Course.students", attributeNodes = @NamedAttributeNode("students"))
 public class Course {
 
     @Id
