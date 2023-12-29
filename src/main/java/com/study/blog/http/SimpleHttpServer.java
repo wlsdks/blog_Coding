@@ -11,9 +11,6 @@ import java.net.*;
  * 이 서버는 HTTP 프로토콜의 기본적인 개념을 이해하고 있어야 하며, 클라이언트의 요청을 직접 파싱하고 응답을 구성해야 해.
  * http://127.0.0.1:8080 -> 이렇게 요청해야 동작함
  */
-import java.io.*;
-import java.net.*;
-
 public class SimpleHttpServer {
     public static void main(String[] args) throws IOException {
         ServerSocket serverSocket = new ServerSocket(8080);
