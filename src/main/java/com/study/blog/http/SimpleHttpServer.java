@@ -11,24 +11,37 @@ import java.net.*;
  * 이 서버는 HTTP 프로토콜의 기본적인 개념을 이해하고 있어야 하며, 클라이언트의 요청을 직접 파싱하고 응답을 구성해야 해.
  * http://127.0.0.1:8080 -> 이렇게 요청해야 동작함
  */
+import java.io.*;
+import java.net.*;
+
 public class SimpleHttpServer {
     public static void main(String[] args) throws IOException {
-        ServerSocket serverSocket = new ServerSocket(8080); // 8080 포트에서 서버 시작
+        ServerSocket serverSocket = new ServerSocket(8080);
         System.out.println("Listening for connection on port 8080 ....");
 
         while (true) {
             try (Socket clientSocket = serverSocket.accept()) {
-                InputStreamReader isr = new InputStreamReader(clientSocket.getInputStream());
-                BufferedReader reader = new BufferedReader(isr);
-                String line = reader.readLine();
+                System.out.println("Connection accepted: " + clientSocket);
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                StringBuilder requestBuilder = new StringBuilder();
+                String line;
+
+                // 요청 헤더 읽기
+                line = reader.readLine();
                 while (!line.isEmpty()) {
-                    System.out.println(line);
+                    requestBuilder.append(line).append("\n");
                     line = reader.readLine();
                 }
 
-                // HTTP 응답 생성
+                // 요청 헤더 출력
+                System.out.println("Request Header: \n" + requestBuilder.toString());
+
+                // HTTP 응답 생성 및 전송
                 String httpResponse = "HTTP/1.1 200 OK\r\n\r\n" + "Hello World!";
                 clientSocket.getOutputStream().write(httpResponse.getBytes("UTF-8"));
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
