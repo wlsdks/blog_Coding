@@ -1,8 +1,8 @@
-package com.study.blog.service;
+package com.study.blog.nplusone.service;
 
-import com.study.blog.entity.Course;
-import com.study.blog.entity.Student;
-import com.study.blog.repository.CourseRepository;
+import com.study.blog.nplusone.entity.Course;
+import com.study.blog.nplusone.entity.Student;
+import com.study.blog.nplusone.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

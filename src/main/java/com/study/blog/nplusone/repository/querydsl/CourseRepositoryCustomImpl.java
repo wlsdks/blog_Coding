@@ -1,9 +1,9 @@
-package com.study.blog.repository.querydsl;
+package com.study.blog.nplusone.repository.querydsl;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.study.blog.entity.Course;
-import com.study.blog.entity.QCourse;
-import com.study.blog.repository.CourseRepositoryCustom;
+import com.study.blog.nplusone.entity.Course;
+import com.study.blog.nplusone.entity.QCourse;
+import com.study.blog.nplusone.repository.CourseRepositoryCustom;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
 

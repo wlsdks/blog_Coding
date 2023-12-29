@@ -1,8 +1,7 @@
-package com.study.blog.entity;
+package com.study.blog.nplusone.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
-import org.hibernate.annotations.BatchSize;
 
 import java.util.HashSet;
 import java.util.Set;

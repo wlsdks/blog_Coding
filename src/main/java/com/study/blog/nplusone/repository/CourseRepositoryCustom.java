@@ -1,6 +1,6 @@
-package com.study.blog.repository;
+package com.study.blog.nplusone.repository;
 
-import com.study.blog.entity.Course;
+import com.study.blog.nplusone.entity.Course;
 
 import java.util.List;
 

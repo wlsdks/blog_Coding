@@ -1,6 +1,6 @@
-package com.study.blog.controller;
+package com.study.blog.nplusone.controller;
 
-import com.study.blog.service.CourseService;
+import com.study.blog.nplusone.service.CourseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
