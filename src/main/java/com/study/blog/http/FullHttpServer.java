@@ -2,6 +2,7 @@ package com.study.blog.http;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,9 +49,16 @@ public class FullHttpServer {
                     responseBody = handlePostOrPutRequest(reader, headers);
                 }
 
-                String httpResponse = "HTTP/1.1 200 OK\r\nContent-Length: " + responseBody.length() + "\r\n\r\n" + responseBody;
+                // 인코딩을 추가해줘야 한국어가 잘 받아진다.
+                String httpResponse = "HTTP/1.1 200 OK\r\n" +
+                        "Content-Length: " + responseBody.getBytes(StandardCharsets.UTF_8).length + "\r\n" +
+                        "Content-Type: text/plain; charset=UTF-8\r\n" +
+                        "\r\n" +
+                        responseBody;
+
                 writer.write(httpResponse);
                 writer.flush();
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -58,8 +66,8 @@ public class FullHttpServer {
     }
 
     private static String handleGetRequest(String path) {
-        // GET 요청 처리 로직
-        return "GET 요청에 대한 응답: " + path;
+        // GET 요청 처리 로직 (한국어를 넣으면 postman이 응답을 못함.. 이건 또 뭐야)
+        return "GET 요청에 대한 응답 : " + path;
     }
 
     private static String handlePostOrPutRequest(BufferedReader reader, Map<String, String> headers) throws IOException {
