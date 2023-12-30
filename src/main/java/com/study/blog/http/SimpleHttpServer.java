@@ -26,6 +26,10 @@ public class SimpleHttpServer {
 
                 // 요청 헤더 읽기
                 line = reader.readLine();
+//                while (line != null && !line.isEmpty()) {
+//                    System.out.println(line);
+//                    line = reader.readLine();
+//                }
                 while (!line.isEmpty()) {
                     requestBuilder.append(line).append("\n");
                     line = reader.readLine();
