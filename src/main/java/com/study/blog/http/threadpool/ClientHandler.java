@@ -66,7 +66,13 @@ public class ClientHandler implements Runnable {
     private String handleRequest(String httpMethod, String path, BufferedReader reader, Map<String, String> headers) throws IOException {
         // 요청 처리 로직
         if ("GET".equals(httpMethod)) {
-            return "GET 요청에 대한 응답 : " + path;
+            // 경로에 따라 다른 응답을 생성
+            if ("/jmeter/test".equals(path)) {
+                return "GET 요청에 대한 응답 : /test 경로";
+            } else {
+                // 다른 경로에 대한 기본 응답
+                return "GET 요청에 대한 응답 : " + path;
+            }
         } else if ("POST".equals(httpMethod) || "PUT".equals(httpMethod)) {
             return handlePostOrPutRequest(reader, headers);
         }
