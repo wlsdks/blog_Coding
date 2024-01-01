@@ -1,5 +1,7 @@
 package com.study.blog.http.liketomcat;
 
+import com.mysema.commons.lang.Pair;
+
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -46,8 +48,9 @@ public class ClientHandler implements Runnable {
                 headerMap.put(header[0], header[1]);
             }
 
-            String responseBody = handleRequest(httpMethod, requestPath, reader, headerMap);
-            String httpResponse = createHttpResponse(responseBody, headerMap);
+            // ClientHandler의 run 메소드에서 handleRequest 호출 부분
+            Pair<String, Integer> response = handleRequest(httpMethod, requestPath, reader, headerMap);
+            String httpResponse = createHttpResponse(response.getFirst(), headerMap, response.getSecond());
 
             writer.write(httpResponse);
             writer.flush();
@@ -62,21 +65,19 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    // 각 요청을 처리해둘 핸들러 메서드
-    private String handleRequest(String httpMethod, String path, BufferedReader reader, Map<String, String> headers) throws IOException {
+    // 각 요청을 처리하고 응답 본문과 상태 코드를 반환하는 메소드
+    private Pair<String, Integer> handleRequest(String httpMethod, String path, BufferedReader reader, Map<String, String> headers) throws IOException {
         // 요청 처리 로직
         if ("GET".equals(httpMethod)) {
-            // 경로에 따라 다른 응답을 생성
             if ("/jmeter/test".equals(path)) {
-                return "GET 요청에 대한 응답 : /test 경로";
+                return new Pair<>("GET 요청에 대한 응답 : /test 경로", 200);
             } else {
-                // 다른 경로에 대한 기본 응답
-                return "GET 요청에 대한 응답 : " + path;
+                return new Pair<>("GET 요청에 대한 응답 : " + path, 200);
             }
         } else if ("POST".equals(httpMethod) || "PUT".equals(httpMethod)) {
-            return handlePostOrPutRequest(reader, headers);
+            return new Pair<>(handlePostOrPutRequest(reader, headers), 200);
         }
-        return "Unsupported Method";
+        return new Pair<>("Unsupported Method", 405);
     }
 
     // post나 put 요청일때는 이 메서드를 사용한다.
@@ -94,13 +95,24 @@ public class ClientHandler implements Runnable {
     }
 
     // 인코딩을 utf-8로 설정한다.
-    private String createHttpResponse(String responseBody, Map<String, String> headers) {
-        // HTTP 응답 생성
-        return "HTTP/1.1 200 OK\r\n" +
+    private String createHttpResponse(String responseBody, Map<String, String> headers, int statusCode) {
+        String statusLine = "HTTP/1.1 " + statusCode + " " + getReasonPhrase(statusCode) + "\r\n";
+        return statusLine +
                 "Content-Length: " + responseBody.getBytes(StandardCharsets.UTF_8).length + "\r\n" +
                 "Content-Type: text/plain; charset=UTF-8\r\n" +
                 "\r\n" +
                 responseBody;
+    }
+
+    // HTTP 상태 코드에 대한 이유 구문을 반환하는 메소드
+    private String getReasonPhrase(int statusCode) {
+        switch (statusCode) {
+            case 200: return "OK";
+            case 404: return "Not Found";
+            case 500: return "Internal Server Error";
+            // 다른 상태 코드 처리
+            default: return "";
+        }
     }
 
 }
