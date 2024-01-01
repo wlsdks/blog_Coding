@@ -1,6 +1,7 @@
 package com.study.blog.http.liketomcat;
 
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -11,13 +12,15 @@ import java.util.concurrent.TimeUnit;
 public class CustomThreadPool {
     private ThreadPoolExecutor threadPoolExecutor;
 
+    // 스레드 풀 초기화
     public CustomThreadPool(int corePoolSize, int maximumPoolSize, long keepAliveTime, int queueCapacity) {
         this.threadPoolExecutor = new ThreadPoolExecutor(
-                corePoolSize,         // 핵심 스레드 수: 이 값은 스레드 풀이 항상 유지하는 스레드 수를 결정한다.
-                maximumPoolSize,      // 최대 스레드 수: 스레드 풀이 동시에 실행할 수 있는 최대 스레드 수를 지정한다.
-                keepAliveTime,        // 유휴 스레드 유지 시간: 추가 스레드(핵심 스레드를 제외한 스레드)가 유휴 상태로 유지될 수 있는 시간을 결정한다.
-                TimeUnit.MILLISECONDS,// 시간 단위 : 스레드 풀에 들어오는 작업이 바로 처리될 수 없을 때 대기하는 큐의 크기를 결정한다.
-                new ArrayBlockingQueue<>(queueCapacity) // 작업 대기열
+                corePoolSize,
+                maximumPoolSize,
+                keepAliveTime,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(queueCapacity),
+                new ThreadPoolExecutor.CallerRunsPolicy() // 작업 거부 정책
         );
     }
 
