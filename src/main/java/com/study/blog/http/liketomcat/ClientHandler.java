@@ -94,15 +94,31 @@ public class ClientHandler implements Runnable {
         return "Received data: " + requestBody.toString();
     }
 
-    // 인코딩을 utf-8로 설정한다.
+    /**
+     * 클라이언트에게 보낼 HTTP 응답을 생성한다.
+     */
     private String createHttpResponse(String responseBody, Map<String, String> headers, int statusCode) {
+        StringBuilder responseBuilder = new StringBuilder();
+        // 상태 라인 구성
         String statusLine = "HTTP/1.1 " + statusCode + " " + getReasonPhrase(statusCode) + "\r\n";
-        return statusLine +
-                "Content-Length: " + responseBody.getBytes(StandardCharsets.UTF_8).length + "\r\n" +
-                "Content-Type: text/plain; charset=UTF-8\r\n" +
-                "\r\n" +
-                responseBody;
+        responseBuilder.append(statusLine);
+
+        // 필수 헤더 추가
+        responseBuilder.append("Content-Length: ").append(responseBody.getBytes(StandardCharsets.UTF_8).length).append("\r\n");
+        responseBuilder.append("Content-Type: text/plain; charset=UTF-8\r\n");
+
+        // 사용자 정의 헤더 추가
+        for (Map.Entry<String, String> header : headers.entrySet()) {
+            responseBuilder.append(header.getKey()).append(": ").append(header.getValue()).append("\r\n");
+        }
+
+        // 응답 본문 추가
+        responseBuilder.append("\r\n").append(responseBody);
+
+        // 완성된 HTTP 응답 반환
+        return responseBuilder.toString();
     }
+
 
     // HTTP 상태 코드에 대한 이유 구문을 반환하는 메소드
     private String getReasonPhrase(int statusCode) {
