@@ -1,12 +1,13 @@
 package com.study.blog.http.liketomcat;
 
-import com.mysema.commons.lang.Pair;
+import com.google.gson.Gson;
 
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * ClientHandler 클래스 자체는 멀티스레딩을 구현한 것이 아니다.
@@ -16,9 +17,35 @@ import java.util.Map;
 public class ClientHandler implements Runnable {
 
     private Socket clientSocket;
+    private final Gson gson = new Gson(); // JSON 처리를 위한 GSON 선언
+    private Map<String, Function<Map<String, String>, String>> routeHandlers; // 라우팅 핸들러
 
     public ClientHandler(Socket clientSocket) {
         this.clientSocket = clientSocket;
+        initializeRoutes();
+    }
+
+    /**
+     * 라우팅 로직 추가
+     */
+    private void initializeRoutes() {
+        routeHandlers = new HashMap<>();
+        // 여기에 경로별 핸들러를 추가
+        routeHandlers.put("/test/jinan", this::jinanHandler);
+    }
+
+    /**
+     * Json 응답 처리
+     */
+    private String jinanHandler(Map<String, String> headers) {
+        // '/test/jinan' 경로의 핸들러 로직, JSON 응답 반환
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("message", "Welcome to /test/jinan");
+        response.put("data", new HashMap<String, String>() {{
+            put("detail", "This is the detailed information for /test/jinan.");
+        }});
+        return gson.toJson(response); // Map을 JSON 문자열로 변환
     }
 
     @Override
@@ -34,24 +61,25 @@ public class ClientHandler implements Runnable {
             }
 
             String[] requestLineParts = line.split(" ");
-            String httpMethod = requestLineParts[0]; // http 종류
             String requestPath = requestLineParts[1]; // 요청 경로
 
-            // 헤더값을 Map으로 만든 다음 세팅해 준다.
+            // 헤더 처리
             HashMap<String, String> headerMap = new HashMap<>();
-            while ((line = reader.readLine()) != null) {
-                if (line.isEmpty()) {
-                    break;
-                }
-
-                String[] header = line.split(": ");
-                headerMap.put(header[0], header[1]);
+            while (!(line = reader.readLine()).isEmpty()) {
+                String[] headerParts = line.split(": ");
+                headerMap.put(headerParts[0], headerParts[1]);
             }
 
-            // ClientHandler의 run 메소드에서 handleRequest 호출 부분
-            Pair<String, Integer> response = handleRequest(httpMethod, requestPath, reader, headerMap);
-            String httpResponse = createHttpResponse(response.getFirst(), headerMap, response.getSecond());
+            // 요청 경로에 따른 핸들러 호출
+            String response;
+            if (routeHandlers.containsKey(requestPath)) {
+                response = routeHandlers.get(requestPath).apply(headerMap);
+            } else {
+                response = gson.toJson(Map.of("error", "404 Not Found"));
+            }
 
+            // HTTP 응답 생성 및 전송
+            String httpResponse = createHttpResponse(response, headerMap, 200);// 상태코드는 예시로 200 사용
             writer.write(httpResponse);
             writer.flush();
 
@@ -65,59 +93,27 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    // 각 요청을 처리하고 응답 본문과 상태 코드를 반환하는 메소드
-    private Pair<String, Integer> handleRequest(String httpMethod, String path, BufferedReader reader, Map<String, String> headers) throws IOException {
-        // 요청 처리 로직
-        if ("GET".equals(httpMethod)) {
-            if ("/jmeter/test".equals(path)) {
-                return new Pair<>("GET 요청에 대한 응답 : /test 경로", 200);
-            } else {
-                return new Pair<>("GET 요청에 대한 응답 : " + path, 200);
-            }
-        } else if ("POST".equals(httpMethod) || "PUT".equals(httpMethod)) {
-            return new Pair<>(handlePostOrPutRequest(reader, headers), 200);
-        }
-        return new Pair<>("Unsupported Method", 405);
-    }
-
-    // post나 put 요청일때는 이 메서드를 사용한다.
-    private String handlePostOrPutRequest(BufferedReader reader, Map<String, String> headerMap) throws IOException {
-
-        // content의 length를 추출한다.
-        int contentLength = Integer.parseInt(headerMap.getOrDefault("Content-Length", "0"));
-        StringBuilder requestBody = new StringBuilder();
-
-        // contentLength만큼 반복하여 body에 데이터를 쓴다.
-        for (int i = 0; i < contentLength; i++) {
-            requestBody.append((char) reader.read());
-        }
-        return "Received data: " + requestBody.toString();
-    }
-
     /**
      * 클라이언트에게 보낼 HTTP 응답을 생성한다.
      */
     private String createHttpResponse(String responseBody, Map<String, String> headers, int statusCode) {
-        StringBuilder responseBuilder = new StringBuilder();
-        // 상태 라인 구성
         String statusLine = "HTTP/1.1 " + statusCode + " " + getReasonPhrase(statusCode) + "\r\n";
-        responseBuilder.append(statusLine);
+        StringBuilder responseBuilder = new StringBuilder(statusLine);
 
-        // 필수 헤더 추가
+        // 기본 헤더 추가
+        responseBuilder.append("Content-Type: application/json; charset=UTF-8\r\n");
         responseBuilder.append("Content-Length: ").append(responseBody.getBytes(StandardCharsets.UTF_8).length).append("\r\n");
-        responseBuilder.append("Content-Type: text/plain; charset=UTF-8\r\n");
 
-        // 사용자 정의 헤더 추가
+        // 사용자 정의 헤더 추가 (옵션)
         for (Map.Entry<String, String> header : headers.entrySet()) {
             responseBuilder.append(header.getKey()).append(": ").append(header.getValue()).append("\r\n");
         }
 
-        // 응답 본문 추가
-        responseBuilder.append("\r\n").append(responseBody);
+        responseBuilder.append("\r\n").append(responseBody); // 응답 본문
 
-        // 완성된 HTTP 응답 반환
         return responseBuilder.toString();
     }
+
 
 
     // HTTP 상태 코드에 대한 이유 구문을 반환하는 메소드
