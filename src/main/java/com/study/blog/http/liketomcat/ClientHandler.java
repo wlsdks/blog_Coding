@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -19,6 +20,8 @@ public class ClientHandler implements Runnable {
     private Socket clientSocket;
     private final Gson gson = new Gson(); // JSON 처리를 위한 GSON 선언
     private Map<String, Function<Map<String, String>, String>> routeHandlers; // 라우팅 핸들러
+
+    private static final String WEB_ROOT = "src/main/resources"; // 정적 파일이 위치한 디렉토리
 
     public ClientHandler(Socket clientSocket) {
         this.clientSocket = clientSocket;
@@ -51,6 +54,37 @@ public class ClientHandler implements Runnable {
     }
 
     /**
+     * 정적 파일을 처리한다.
+     */
+    public void serveStaticFile(String filePath, BufferedWriter writer) throws IOException {
+        File file = new File(WEB_ROOT, filePath);
+        if (file.exists() && !file.isDirectory()) {
+            // 파일 내용을 읽어와서 클라이언트에게 전송
+            String contentType = Files.probeContentType(file.toPath());
+            writer.write("HTTP/1.1 200 OK\r\n");
+            writer.write("Content-Type: " + contentType + "\r\n");
+            writer.write("Content-length: " + file.length() + "\r\n");
+            writer.write("\r\n");
+            writer.flush();
+
+            try (FileInputStream fis = new FileInputStream(file)) {
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = fis.read(buffer)) != -1) {
+                    writer.write(new String(buffer, 0, bytesRead, StandardCharsets.UTF_8));
+                }
+            }
+            writer.flush();
+        } else {
+            // 파일이 없는 경우 404 응답
+            writer.write("HTTP/1.1 404 Not Found\r\n");
+            writer.write("\r\n");
+            writer.write("404 Not Found");
+            writer.flush();
+        }
+    }
+
+    /**
      *  클라이언트가 예를 들어 curl 명령어를 사용하여 http://서버주소/test/jinan 경로로 요청을 보내면,
      *  서버는 ClientHandler의 run() 메소드를 실행하여 이 요청을 처리한다.
      */
@@ -68,7 +102,19 @@ public class ClientHandler implements Runnable {
 
             // 클라이언트로부터 요청 라인을 읽어 requestPath 변수에 요청된 경로를 저장한다.
             String[] requestLineParts = line.split(" ");
+            String httpMethod = requestLineParts[0];
             String requestPath = requestLineParts[1];
+
+            /**
+             * 정적 파일 요청 처리
+             * /static/으로 시작하는 경로로 들어오는 요청을 정적 파일 요청으로 간주하고, 요청된 파일을 WEB_ROOT 디렉토리에서 찾아 반환한다.
+             * 파일이 존재하지 않는 경우 404 Not Found 응답을 반환한다.
+             */
+            if (httpMethod.equals("GET") && requestPath.startsWith("/static/")) {
+                String filePath = requestPath.substring("/static/".length()); // "/static/" 경로 제거
+                serveStaticFile(filePath, writer);
+                return; // 정적 파일 처리 후 메서드 종료
+            }
 
             // 요청 헤더들을 읽어 headerMap에 저장한다. 이 맵은 요청에 포함된 헤더들의 이름과 값을 저장한다.
             HashMap<String, String> headerMap = new HashMap<>();
