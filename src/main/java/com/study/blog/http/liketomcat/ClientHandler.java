@@ -27,6 +27,8 @@ public class ClientHandler implements Runnable {
 
     /**
      * 라우팅 로직 추가
+     * initializeRoutes() 메서드는 routeHandlers 맵에 경로별 핸들러를 사전에 설정해두는 역할만 수행하며,
+     * 실제 경로에 대한 요청이 처리되는 것은 클라이언트로부터 해당 경로에 대한 HTTP 요청이 서버에 도착했을 때다.
      */
     private void initializeRoutes() {
         routeHandlers = new HashMap<>();
@@ -48,6 +50,10 @@ public class ClientHandler implements Runnable {
         return gson.toJson(response); // Map을 JSON 문자열로 변환
     }
 
+    /**
+     *  클라이언트가 예를 들어 curl 명령어를 사용하여 http://서버주소/test/jinan 경로로 요청을 보내면,
+     *  서버는 ClientHandler의 run() 메소드를 실행하여 이 요청을 처리한다.
+     */
     @Override
     public void run() {
         try (
@@ -60,17 +66,19 @@ public class ClientHandler implements Runnable {
                 return;
             }
 
+            // 클라이언트로부터 요청 라인을 읽어 requestPath 변수에 요청된 경로를 저장한다.
             String[] requestLineParts = line.split(" ");
-            String requestPath = requestLineParts[1]; // 요청 경로
+            String requestPath = requestLineParts[1];
 
-            // 헤더 처리
+            // 요청 헤더들을 읽어 headerMap에 저장한다. 이 맵은 요청에 포함된 헤더들의 이름과 값을 저장한다.
             HashMap<String, String> headerMap = new HashMap<>();
             while (!(line = reader.readLine()).isEmpty()) {
                 String[] headerParts = line.split(": ");
                 headerMap.put(headerParts[0], headerParts[1]);
             }
 
-            // 요청 경로에 따른 핸들러 호출
+            // routeHandlers 맵에서 requestPath에 해당하는 핸들러를 찾는다.
+            // 만약 핸들러가 존재한다면, 해당 핸들러 함수를 호출하여 요청을 처리하고 응답 본문을 생성한다.
             String response;
             if (routeHandlers.containsKey(requestPath)) {
                 response = routeHandlers.get(requestPath).apply(headerMap);
@@ -78,7 +86,7 @@ public class ClientHandler implements Runnable {
                 response = gson.toJson(Map.of("error", "404 Not Found"));
             }
 
-            // HTTP 응답 생성 및 전송
+            // 생성된 응답 본문을 포함한 HTTP 응답 메시지를 클라이언트에게 전송하고 연결을 종료한다.
             String httpResponse = createHttpResponse(response, headerMap, 200);// 상태코드는 예시로 200 사용
             writer.write(httpResponse);
             writer.flush();
