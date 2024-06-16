@@ -1,9 +1,15 @@
+#spring:
+#  datasource:
+#    driver-class-name: org.postgresql.Driver
+#    url: ${DB_URL}
+#    username: ${USERNAME}
+#    password: ${PASSWORD}
 spring:
   datasource:
-    driver-class-name: org.postgresql.Driver
-    url: ${DB_URL}
-    username: ${USERNAME}
-    password: ${PASSWORD}
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password:
 
   jpa:
     defer-datasource-initialization: true
